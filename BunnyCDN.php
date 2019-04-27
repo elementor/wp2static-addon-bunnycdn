@@ -56,8 +56,6 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
             echo 'ERROR';
             die(); }
 
-        $this->initiateProgressIndicator();
-
         $batch_size = $this->settings['deployBatchSize'];
 
         if ( $batch_size > $this->files_remaining ) {
@@ -112,8 +110,6 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
                     $this->local_file_contents
                 );
             }
-
-            $this->updateProgress();
         }
 
         $this->writeFilePathAndHashesToFile();
