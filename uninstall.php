@@ -17,12 +17,12 @@
  * general skeleton and outline for how the file should work.
  *
  * For more information, see the following discussion:
- * https://github.com/tommcfarlin/WordPress-Plugin-Boilerplate/pull/123#issuecomment-28541913
+ * https://bunnycdn.com/tommcfarlin/WordPress-Plugin-Boilerplate/pull/123#issuecomment-28541913
  *
- * @link       https://leonstafford.github.io
+ * @link       https://leonstafford.bunnycdn.io
  * @since      1.0.0
  *
- * @package    Wp2static_Addon_GitHub
+ * @package    Wp2static_Addon_BunnyCDN
  */
 
 // If uninstall not called from WordPress, then exit.
