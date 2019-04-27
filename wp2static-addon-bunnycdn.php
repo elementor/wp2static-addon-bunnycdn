@@ -26,7 +26,7 @@ $wp2static_core_dir =
 
 $add_on_dir = dirname( __FILE__ );
 
-if ( $ajax_action == 'test_bunny' ) {
+if ( $ajax_action == 'test_bunnycdn' ) {
     require_once $wp2static_core_dir .
         '/plugin/WP2Static/SitePublisher.php';
     require_once $add_on_dir . '/BunnyCDN.php';

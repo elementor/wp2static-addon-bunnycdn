@@ -43,7 +43,7 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
             case 'bunnycdn_purge_cache':
                 $this->purge_all_cache();
                 break;
-            case 'test_bunny':
+            case 'test_bunnycdn':
                 $this->test_deploy();
                 break;
         }
