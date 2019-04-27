@@ -5,23 +5,19 @@
     deploy_options['bunnycdn'] = {
         exportSteps: [
             'bunnycdn_prepare_export',
-            'bunnycdn_upload_files',
+            'bunnycdn_transfer_files',
+            'bunnycdn_purge_cache',
             'finalize_deployment'
         ],
         required_fields: {
-          ghToken: 'Please specify your BunnyCDN personal access token in order to deploy to BunnyCDN.',
-          ghRepo: 'Please specify your BunnyCDN repository name in order to deploy to BunnyCDN.',
-          ghBranch: 'Please specify which branch in your BunnyCDN repository you want to deploy to.',
-        },
-        repo_field: {
-          field: 'ghRepo',
-          message: "Please ensure your BunnyCDN repo is specified as USER_OR_ORG_NAME/REPO_NAME\n"
+          bunnycdnPullZoneName: 'Please specify your BunnyCDN pull zone name in order to deploy to BunnyCDN.',
+          bunnycdnAPIKey: 'Please specify your BunnyCDN API/FTP password in order to deploy to BunnyCDN.',
         }
     };
 
     status_descriptions['bunnycdn_prepare_export'] = 'Preparing files for BunnyCDN deployment';
-    status_descriptions['bunnycdn_upload_files'] = 'Deploying files via BunnyCDN';
-    status_descriptions['cloudfront_invalidate_all_items'] = 'Invalidating CloudFront cache';
+    status_descriptions['bunnycdn_transfer_files'] = 'Deploying files via BunnyCDN';
+    status_descriptions['bunnycdn_purge_cache'] = 'Purging BunnyCDN cache';
   }); // end DOM ready
 
 })( jQuery );

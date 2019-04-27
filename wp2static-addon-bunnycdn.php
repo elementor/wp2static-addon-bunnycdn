@@ -26,7 +26,7 @@ $wp2static_core_dir =
 
 $add_on_dir = dirname( __FILE__ );
 
-if ( $ajax_action == 'test_bunnycdn' ) {
+if ( $ajax_action == 'test_bunny' ) {
     require_once $wp2static_core_dir .
         '/plugin/WP2Static/SitePublisher.php';
     require_once $add_on_dir . '/BunnyCDN.php';
@@ -40,7 +40,14 @@ if ( $ajax_action == 'test_bunnycdn' ) {
 
     wp_die();
     return null;
-} elseif ( $ajax_action == 'bunnycdn_upload_files' ) {
+} elseif ( $ajax_action == 'bunnycdn_transfer_files' ) {
+    require_once $wp2static_core_dir .
+        '/plugin/WP2Static/SitePublisher.php';
+    require_once $add_on_dir . '/BunnyCDN.php';
+
+    wp_die();
+    return null;
+} elseif ( $ajax_action == 'bunnycdn_purge_cache' ) {
     require_once $wp2static_core_dir .
         '/plugin/WP2Static/SitePublisher.php';
     require_once $add_on_dir . '/BunnyCDN.php';
