@@ -1,68 +1,36 @@
 <?php
 
-class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
+namespace WP2Static;
+
+class BunnyCDN extends SitePublisher {
 
     public function __construct() {
-        $deploy_keys = array(
-          'bunnycdn',
-          array(
-            'baseUrl-bunnycdn',
-            'bunnycdnStorageZoneAccessKey',
-            'bunnycdnPullZoneAccessKey',
-            'bunnycdnPullZoneID',
-            'bunnycdnStorageZoneName',
-            'bunnycdnRemotePath',
-         ),
-        );
-
-        $this->loadSettings( 'bunnycdn', $deploy_keys );
-
-        $this->wp2static_core_dir =
-            dirname( __FILE__ ) . '/../static-html-output-plugin';
+        $plugin = Controller::getInstance();
 
         $this->api_base = 'https://storage.bunnycdn.com';
-
+        $this->batch_size = $plugin->options->getOption('deployBatchSize');
+        $this->storage_zone_name = $plugin->options->getOption('bunnycdnStorageZoneName');
+        $this->storage_zone_access_key = $plugin->options->getOption('bunnycdnStorageZoneAccessKey');
+        $this->pull_zone_access_key = $plugin->options->getOption('bunnycdnPullZoneAccessKey');
+        $this->pull_zone_id = $plugin->options->getOption('bunnycdnPullZoneID');
+        $this->cdn_remote_path = $plugin->options->getOption('bunnycdnRemotePath');
         $this->previous_hashes_path =
-            $this->settings['wp_uploads_path'] .
+            $plugin->options->getOption('wp_uploads_path') .
                 '/WP2STATIC-BUNNYCDN-PREVIOUS-HASHES.txt';
-
-        if ( defined( 'WP_CLI' ) ) {
-            return; }
-
-        switch ( $_POST['ajax_action'] ) {
-            case 'bunnycdn_prepare_export':
-                $this->bootstrap();
-                $this->loadArchive();
-                $this->prepareDeploy( true );
-                break;
-            case 'bunnycdn_transfer_files':
-                $this->bootstrap();
-                $this->loadArchive();
-                $this->upload_files();
-                break;
-            case 'bunnycdn_purge_cache':
-                $this->purge_all_cache();
-                break;
-            case 'test_bunnycdn':
-                $this->test_deploy();
-                break;
-        }
     }
 
-    public function upload_files() {
+    public function bunnycdn_transfer_files() {
         $this->files_remaining = $this->getRemainingItemsCount();
 
         if ( $this->files_remaining < 0 ) {
             echo 'ERROR';
             die(); }
 
-        $batch_size = $this->settings['deployBatchSize'];
-
-        if ( $batch_size > $this->files_remaining ) {
-            $batch_size = $this->files_remaining;
+        if ( $this->batch_size > $this->files_remaining ) {
+            $this->batch_size = $this->files_remaining;
         }
 
-        $lines = $this->getItemsToDeploy( $batch_size );
+        $lines = $this->getItemsToDeploy( $this->batch_size );
 
         $this->openPreviousHashesFile();
 
@@ -82,9 +50,12 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
 
             $this->local_file_contents = file_get_contents( $this->local_file );
 
-            if ( isset( $this->file_paths_and_hashes[ $this->target_path ] ) ) {
-                $prev = $this->file_paths_and_hashes[ $this->target_path ];
-                $current = crc32( $this->local_file_contents );
+            $this->hash_key =
+                $this->target_path . basename( $this->local_file );
+
+                if ( isset( $this->file_paths_and_hashes[ $this->hash_key ] ) ) {
+                    $prev = $this->file_paths_and_hashes[ $this->hash_key ];
+                    $current = crc32( $this->local_file_contents );
 
                 if ( $prev != $current ) {
                     if ( $this->fileExistsInBunnyCDN() ) {
@@ -94,7 +65,7 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
                     }
 
                     $this->recordFilePathAndHashInMemory(
-                        $this->target_path,
+                        $this->hash_key,
                         $this->local_file_contents
                     );
                 }
@@ -106,11 +77,13 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
                 }
 
                 $this->recordFilePathAndHashInMemory(
-                    $this->target_path,
+                    $this->hash_key,
                     $this->local_file_contents
                 );
             }
         }
+
+        unset( $this->bunnycdn );
 
         $this->writeFilePathAndHashesToFile();
 
@@ -121,7 +94,7 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
         }
     }
 
-    public function purge_all_cache() {
+    public function bunnycdn_purge_cache() {
         try {
             $endpoint = 'https://bunnycdn.com/api/pullzone/' .
                 $this->settings['bunnycdnPullZoneID'] . '/purgeCache';
@@ -155,16 +128,11 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
             $good_response_codes = array( '100', '200', '201' );
 
             if ( ! in_array( $status_code, $good_response_codes ) ) {
-                require_once $this->wp2static_core_dir .
-                    '/plugin/WP2Static/WsLog.php';
-
                 WsLog::l(
                     'BAD RESPONSE STATUS (' . $status_code . '): '
                 );
 
                 echo 'FAIL';
-
-                throw new Exception( 'BunnyCDN API bad response status' );
             }
 
             if ( ! defined( 'WP_CLI' ) ) {
@@ -173,12 +141,10 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
         } catch ( Exception $e ) {
             WsLog::l( 'BUNNYCDN EXPORT: error encountered' );
             WsLog::l( $e );
-            throw new Exception( $e );
         }
     }
 
-    public function test_deploy() {
-
+    public function test_bunnycdn() {
         try {
             $remote_path = $this->api_base . '/' .
                 $this->settings['bunnycdnStorageZoneName'] .
@@ -222,22 +188,13 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
             $good_response_codes = array( '100', '200', '201', '301', '302', '304' );
 
             if ( ! in_array( $status_code, $good_response_codes ) ) {
-                require_once $this->wp2static_core_dir .
-                    '/plugin/WP2Static/WsLog.php';
-
                 WsLog::l(
                     'BAD RESPONSE STATUS (' . $status_code . '): '
                 );
-
-                throw new Exception( 'BunnyCDN API bad response status' );
             }
         } catch ( Exception $e ) {
-            require_once $this->wp2static_core_dir .
-                '/plugin/WP2Static/WsLog.php';
-
             WsLog::l( 'BUNNYCDN EXPORT: error encountered' );
             WsLog::l( $e );
-            throw new Exception( $e );
         }
 
         if ( ! defined( 'WP_CLI' ) ) {
@@ -246,10 +203,7 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
     }
 
     public function fileExistsInBunnyCDN() {
-        require_once $this->wp2static_core_dir .
-            '/plugin/WP2Static/Request.php';
-
-        $this->client = new WP2Static_Request();
+        $this->client = new Request();
 
         return false;
     }
@@ -281,4 +235,4 @@ class WP2Static_BunnyCDN extends WP2Static_SitePublisher {
     }
 }
 
-$bunny = new WP2Static_BunnyCDN();
+$bunny = new BunnyCDN();

@@ -1,6 +1,6 @@
 === Plugin Name ===
 Contributors: leonstafford
-Donate link: https://leonstafford.bunnycdn.io
+Donate link: https://ljs.dev
 Tags: wp2static,bunnycdn,static
 Requires at least: 3.2
 Tested up to: 5.0.3
@@ -8,11 +8,11 @@ Stable tag: 0.1
 License: Unlicense
 License URI: http://unlicense.org
 
-Adds AWS BunnyCDN as a deployment option for WP2Static.
+Adds BunnyCDN as a deployment option for WP2Static.
 
 == Description ==
 
-Take advantage of the BunnyCDN and optionally CloudFront to host your WordPress
+Take advantage of BunnyCDN to host your WordPress
  powered static website.
 
 == Installation ==
