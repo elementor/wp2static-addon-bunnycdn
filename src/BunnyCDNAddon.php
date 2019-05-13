@@ -1,100 +1,86 @@
 <?php
 
-class Wp2static_Addon_BunnyCDN {
+namespace WP2Static;
 
-	protected $loader;
-	protected $plugin_name;
-	protected $version;
+class BunnyCDNAddon {
 
 	public function __construct() {
 		if ( defined( 'PLUGIN_NAME_VERSION' ) ) {
 			$this->version = PLUGIN_NAME_VERSION;
 		} else {
-			$this->version = '1.0.0';
+			$this->version = '0.1';
 		}
 		$this->plugin_name = 'wp2static-addon-bunnycdn';
-
-		$this->load_dependencies();
-		$this->define_admin_hooks();
 	}
 
-	private function load_dependencies() {
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp2static-addon-bunnycdn-loader.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-wp2static-addon-bunnycdn-admin.php';
-
-		$this->loader = new Wp2static_Addon_BunnyCDN_Loader();
-
-	}
-
-	private function define_admin_hooks() {
-		$plugin_admin = new Wp2static_Addon_BunnyCDN_Admin( $this->get_plugin_name(), $this->get_version() );
-
-        if ( isset( $_GET['page'] ) && ( $_GET['page'] == 'wp2static')) {
-            $this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+	public function bunnycdn_load_js( $hook ) {
+        if ( $hook !== 'toplevel_page_wp2static' ) {
+            return;
         }
-	}
+
+		wp_enqueue_script(
+            $this->plugin_name,
+            plugin_dir_url( __FILE__ ) .
+                '../js/wp2static-addon-bunnycdn-admin.js',
+            array( 'jquery' ),
+            $this->version, false
+        );
+    }
 
     public function add_deployment_option_to_ui( $deploy_options ) {
         $deploy_options['bunnycdn'] = array('BunnyCDN');
-
         return $deploy_options;
     }
 
     public function load_deployment_option_template( $templates ) {
         $templates[] =  __DIR__ . '/../views/bunnycdn_settings_block.phtml';
-
         return $templates;
     }
 
     public function add_deployment_option_keys( $keys ) {
         $new_keys = array(
             'baseUrl-bunnycdn',
+            'bunnycdnStorageZoneName',
             'bunnycdnStorageZoneAccessKey',
             'bunnycdnPullZoneAccessKey',
             'bunnycdnPullZoneID',
-            'bunnycdnStorageZoneName',
             'bunnycdnRemotePath',
         );
-
         $keys = array_merge(
             $keys,
             $new_keys
         );
-
         return $keys;
     }
 
     public function whitelist_deployment_option_keys( $keys ) {
         $whitelist_keys = array(
             'baseUrl-bunnycdn',
-            'bunnycdnPullZoneID',
             'bunnycdnStorageZoneName',
+            'bunnycdnPullZoneID',
             'bunnycdnRemotePath',
         );
-
         $keys = array_merge(
             $keys,
             $whitelist_keys
         );
-
         return $keys;
     }
 
     public function add_post_and_db_keys( $keys ) {
         $keys['bunnycdn'] = array(
             'baseUrl-bunnycdn',
+            'bunnycdnStorageZoneName',
             'bunnycdnStorageZoneAccessKey',
             'bunnycdnPullZoneAccessKey',
             'bunnycdnPullZoneID',
-            'bunnycdnStorageZoneName',
             'bunnycdnRemotePath',
         );
-
         return $keys;
     }
 
 	public function run() {
-		$this->loader->run();
+		add_action( 'admin_enqueue_scripts', [ $this, 'bunnycdn_load_js' ] );
 
         add_filter(
             'wp2static_add_deployment_method_option_to_ui',
@@ -120,17 +106,6 @@ class Wp2static_Addon_BunnyCDN {
             'wp2static_add_post_and_db_keys',
             [$this, 'add_post_and_db_keys']
         );
-	}
-
-	public function get_plugin_name() {
-		return $this->plugin_name;
-	}
-
-	public function get_loader() {
-		return $this->loader;
-	}
-
-	public function get_version() {
-		return $this->version;
-	}
+    }
+    
 }
