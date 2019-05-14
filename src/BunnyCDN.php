@@ -48,7 +48,7 @@ class BunnyCDN extends SitePublisher {
             $this->local_file = '/' . $this->archive->path . $this->local_file;
 
             if ( ! is_file( $this->local_file ) ) {
-                error_log('no local file ' . $this->local_file);
+                error_log( 'no local file ' . $this->local_file );
                 continue;
             }
 
@@ -70,10 +70,8 @@ class BunnyCDN extends SitePublisher {
                 // current file different than previous deployed one
                 if ( $prev != $current ) {
                     if ( $this->fileExistsInBunnyCDN() ) {
-                        error_log( 'cached: File exist:' . $this->hash_key );
                         $this->updateFileInBunnyCDN();
                     } else {
-                        error_log( 'cached: File doesnt exist' . $this->hash_key );
                         $this->createFileInBunnyCDN();
                     }
 
@@ -143,7 +141,8 @@ class BunnyCDN extends SitePublisher {
             $good_response_codes = array( '100', '200', '201', '302' );
 
             if ( ! in_array( $status_code, $good_response_codes ) ) {
-                $err = 'BAD RESPONSE DURING BUNNYCDN PURGE CACHE: ' . $status_code;
+                $err =
+                    'BAD RESPONSE DURING BUNNYCDN PURGE CACHE: ' . $status_code;
                 WsLog::l( $err );
                 throw new Exception( $err );
 
@@ -181,7 +180,7 @@ class BunnyCDN extends SitePublisher {
                 CURLOPT_HTTPHEADER,
                 array(
                     'AccessKey: ' .
-                        $this->storage_zone_access_key
+                        $this->storage_zone_access_key,
                 )
             );
 
@@ -200,10 +199,12 @@ class BunnyCDN extends SitePublisher {
 
             curl_close( $ch );
 
-            $good_response_codes = array( '100', '200', '201', '301', '302', '304' );
+            $good_response_codes =
+                array( '100', '200', '201', '301', '302', '304' );
 
             if ( ! in_array( $status_code, $good_response_codes ) ) {
-                $err = 'BAD RESPONSE DURING BUNNYCDN TEST DEPLOY: ' . $status_code;
+                $err =
+                    'BAD RESPONSE DURING BUNNYCDN TEST DEPLOY: ' . $status_code;
                 WsLog::l( $err );
                 throw new Exception( $err );
             }

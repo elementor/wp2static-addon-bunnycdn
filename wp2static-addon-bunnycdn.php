@@ -14,7 +14,7 @@
  */
 
 if ( ! defined( 'WPINC' ) ) {
-	die;
+    die;
 }
 
 define( 'WP2STATIC_BUNNYCDN_PATH', plugin_dir_path( __FILE__ ) );
@@ -26,14 +26,14 @@ $ajax_action = isset( $_POST['ajax_action'] ) ? $_POST['ajax_action'] : '';
 // @codingStandardsIgnoreEnd
 
 if ( $ajax_action == 'test_bunnycdn' ) {
-    $bunnycdn = new WP2Static\BunnyCDN;
+    $bunnycdn = new WP2Static\BunnyCDN();
 
     $bunnycdn->test_bunnycdn();
 
     wp_die();
     return null;
 } elseif ( $ajax_action == 'bunnycdn_prepare_export' ) {
-    $bunnycdn = new WP2Static\BunnyCDN;
+    $bunnycdn = new WP2Static\BunnyCDN();
 
     $bunnycdn->bootstrap();
     $bunnycdn->prepareDeploy();
@@ -41,7 +41,7 @@ if ( $ajax_action == 'test_bunnycdn' ) {
     wp_die();
     return null;
 } elseif ( $ajax_action == 'bunnycdn_transfer_files' ) {
-    $bunnycdn = new WP2Static\BunnyCDN;
+    $bunnycdn = new WP2Static\BunnyCDN();
 
     $bunnycdn->bootstrap();
     $bunnycdn->bunnycdn_transfer_files();
@@ -49,7 +49,7 @@ if ( $ajax_action == 'test_bunnycdn' ) {
     wp_die();
     return null;
 } elseif ( $ajax_action == 'bunnycdn_purge_cache' ) {
-    $bunnycdn = new WP2Static\BunnyCDN;
+    $bunnycdn = new WP2Static\BunnyCDN();
 
     $bunnycdn->bunnycdn_purge_cache();
 
@@ -60,8 +60,8 @@ if ( $ajax_action == 'test_bunnycdn' ) {
 define( 'PLUGIN_NAME_VERSION', '0.1' );
 
 function run_wp2static_addon_bunnycdn() {
-	$plugin = new WP2Static\BunnyCDNAddon();
-	$plugin->run();
+    $plugin = new WP2Static\BunnyCDNAddon();
+    $plugin->run();
 }
 
 run_wp2static_addon_bunnycdn();
