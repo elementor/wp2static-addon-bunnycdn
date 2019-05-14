@@ -2,21 +2,29 @@
 
 namespace WP2Static;
 
+use Exception;
+
 class BunnyCDN extends SitePublisher {
 
     public function __construct() {
         $plugin = Controller::getInstance();
 
         $this->api_base = 'https://storage.bunnycdn.com';
-        $this->batch_size = $plugin->options->getOption('deployBatchSize');
-        $this->storage_zone_name = $plugin->options->getOption('bunnycdnStorageZoneName');
-        $this->storage_zone_access_key = $plugin->options->getOption('bunnycdnStorageZoneAccessKey');
-        $this->pull_zone_access_key = $plugin->options->getOption('bunnycdnPullZoneAccessKey');
-        $this->pull_zone_id = $plugin->options->getOption('bunnycdnPullZoneID');
-        $this->cdn_remote_path = $plugin->options->getOption('bunnycdnRemotePath');
+        $this->batch_size =
+            $plugin->options->getOption( 'deployBatchSize' );
+        $this->storage_zone_name =
+            $plugin->options->getOption( 'bunnycdnStorageZoneName' );
+        $this->storage_zone_access_key =
+            $plugin->options->getOption( 'bunnycdnStorageZoneAccessKey' );
+        $this->pull_zone_access_key =
+            $plugin->options->getOption( 'bunnycdnPullZoneAccessKey' );
+        $this->pull_zone_id =
+            $plugin->options->getOption( 'bunnycdnPullZoneID' );
+        $this->cdn_remote_path =
+            $plugin->options->getOption( 'bunnycdnRemotePath' );
         $this->previous_hashes_path =
-            $plugin->options->getOption('wp_uploads_path') .
-                '/WP2STATIC-BUNNYCDN-PREVIOUS-HASHES.txt';
+            SiteInfo::getPath( 'uploads' ) .
+            '/WP2STATIC-BUNNYCDN-PREVIOUS-HASHES.txt';
     }
 
     public function bunnycdn_transfer_files() {
@@ -37,14 +45,16 @@ class BunnyCDN extends SitePublisher {
         foreach ( $lines as $line ) {
             list($this->local_file, $this->target_path) = explode( ',', $line );
 
-            $this->local_file = $this->archive->path . $this->local_file;
+            $this->local_file = '/' . $this->archive->path . $this->local_file;
 
             if ( ! is_file( $this->local_file ) ) {
-                continue; }
+                error_log('no local file ' . $this->local_file);
+                continue;
+            }
 
-            if ( isset( $this->settings['bunnycdnRemotePath'] ) ) {
+            if ( isset( $this->cdn_remote_path ) ) {
                 $this->target_path =
-                    $this->settings['bunnycdnRemotePath'] . '/' .
+                    $this->cdn_remote_path . '/' .
                         $this->target_path;
             }
 
@@ -53,14 +63,17 @@ class BunnyCDN extends SitePublisher {
             $this->hash_key =
                 $this->target_path . basename( $this->local_file );
 
-                if ( isset( $this->file_paths_and_hashes[ $this->hash_key ] ) ) {
-                    $prev = $this->file_paths_and_hashes[ $this->hash_key ];
-                    $current = crc32( $this->local_file_contents );
+            if ( isset( $this->file_paths_and_hashes[ $this->hash_key ] ) ) {
+                $prev = $this->file_paths_and_hashes[ $this->hash_key ];
+                $current = crc32( $this->local_file_contents );
 
+                // current file different than previous deployed one
                 if ( $prev != $current ) {
                     if ( $this->fileExistsInBunnyCDN() ) {
+                        error_log( 'cached: File exist:' . $this->hash_key );
                         $this->updateFileInBunnyCDN();
                     } else {
+                        error_log( 'cached: File doesnt exist' . $this->hash_key );
                         $this->createFileInBunnyCDN();
                     }
 
@@ -71,8 +84,10 @@ class BunnyCDN extends SitePublisher {
                 }
             } else {
                 if ( $this->fileExistsInBunnyCDN() ) {
+                    error_log( 'nocache File exist:' . $this->hash_key );
                     $this->updateFileInBunnyCDN();
                 } else {
+                    error_log( 'nocache File exist:' . $this->hash_key );
                     $this->createFileInBunnyCDN();
                 }
 
@@ -97,7 +112,7 @@ class BunnyCDN extends SitePublisher {
     public function bunnycdn_purge_cache() {
         try {
             $endpoint = 'https://bunnycdn.com/api/pullzone/' .
-                $this->settings['bunnycdnPullZoneID'] . '/purgeCache';
+                $this->pull_zone_id . '/purgeCache';
 
             $ch = curl_init();
 
@@ -116,7 +131,7 @@ class BunnyCDN extends SitePublisher {
                     'Content-Type: application/json',
                     'Content-Length: 0',
                     'AccessKey: ' .
-                        $this->settings['bunnycdnPullZoneAccessKey'],
+                        $this->pull_zone_access_key,
                 )
             );
 
@@ -125,12 +140,12 @@ class BunnyCDN extends SitePublisher {
 
             curl_close( $ch );
 
-            $good_response_codes = array( '100', '200', '201' );
+            $good_response_codes = array( '100', '200', '201', '302' );
 
             if ( ! in_array( $status_code, $good_response_codes ) ) {
-                WsLog::l(
-                    'BAD RESPONSE STATUS (' . $status_code . '): '
-                );
+                $err = 'BAD RESPONSE DURING BUNNYCDN PURGE CACHE: ' . $status_code;
+                WsLog::l( $err );
+                throw new Exception( $err );
 
                 echo 'FAIL';
             }
@@ -147,7 +162,7 @@ class BunnyCDN extends SitePublisher {
     public function test_bunnycdn() {
         try {
             $remote_path = $this->api_base . '/' .
-                $this->settings['bunnycdnStorageZoneName'] .
+                options['bunnycdnStorageZoneName'] .
                 '/tmpFile';
 
             $ch = curl_init();
@@ -166,7 +181,7 @@ class BunnyCDN extends SitePublisher {
                 CURLOPT_HTTPHEADER,
                 array(
                     'AccessKey: ' .
-                        $this->settings['bunnycdnStorageZoneAccessKey'],
+                        $this->storage_zone_access_key
                 )
             );
 
@@ -188,9 +203,9 @@ class BunnyCDN extends SitePublisher {
             $good_response_codes = array( '100', '200', '201', '301', '302', '304' );
 
             if ( ! in_array( $status_code, $good_response_codes ) ) {
-                WsLog::l(
-                    'BAD RESPONSE STATUS (' . $status_code . '): '
-                );
+                $err = 'BAD RESPONSE DURING BUNNYCDN TEST DEPLOY: ' . $status_code;
+                WsLog::l( $err );
+                throw new Exception( $err );
             }
         } catch ( Exception $e ) {
             WsLog::l( 'BUNNYCDN EXPORT: error encountered' );
@@ -211,12 +226,12 @@ class BunnyCDN extends SitePublisher {
     public function createFileInBunnyCDN() {
         try {
             $remote_path = $this->api_base . '/' .
-                $this->settings['bunnycdnStorageZoneName'] .
+                $this->storage_zone_name .
                 '/' . $this->target_path;
 
             $headers = array(
                 'AccessKey: ' .
-                    $this->settings['bunnycdnStorageZoneAccessKey'],
+                    $this->storage_zone_access_key,
             );
 
             $this->client->putWithFileStreamAndHeaders(
