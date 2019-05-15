@@ -24,7 +24,8 @@ class BunnyCDN extends SitePublisher {
             $plugin->options->getOption( 'bunnycdnRemotePath' );
         $this->previous_hashes_path =
             SiteInfo::getPath( 'uploads' ) .
-            '/WP2STATIC-BUNNYCDN-PREVIOUS-HASHES.txt';
+            'wp2static-working-files/' .
+            '/BUNNYCDN-PREVIOUS-HASHES.txt';
     }
 
     public function bunnycdn_transfer_files() {
@@ -32,11 +33,14 @@ class BunnyCDN extends SitePublisher {
 
         if ( $this->files_remaining < 0 ) {
             echo 'ERROR';
-            die(); }
+            die();
+        }
 
         if ( $this->batch_size > $this->files_remaining ) {
             $this->batch_size = $this->files_remaining;
         }
+
+        $this->client = new Request();
 
         $lines = $this->getItemsToDeploy( $this->batch_size );
 
@@ -45,11 +49,15 @@ class BunnyCDN extends SitePublisher {
         foreach ( $lines as $line ) {
             list($this->local_file, $this->target_path) = explode( ',', $line );
 
-            $this->local_file = '/' . $this->archive->path . $this->local_file;
+            $this->local_file = SiteInfo::getPath( 'uploads' ) .
+                'wp2static-exported-site/' .
+                $this->local_file;
 
             if ( ! is_file( $this->local_file ) ) {
-                error_log('no local file ' . $this->local_file);
-                continue;
+                $err = 'COULDN\'T FIND LOCAL FILE TO DEPLOY: ' .
+                    $this->local_file;
+                WsLog::l( $err );
+                throw new Exception( $err );
             }
 
             if ( isset( $this->cdn_remote_path ) ) {
@@ -69,13 +77,7 @@ class BunnyCDN extends SitePublisher {
 
                 // current file different than previous deployed one
                 if ( $prev != $current ) {
-                    if ( $this->fileExistsInBunnyCDN() ) {
-                        error_log( 'cached: File exist:' . $this->hash_key );
-                        $this->updateFileInBunnyCDN();
-                    } else {
-                        error_log( 'cached: File doesnt exist' . $this->hash_key );
-                        $this->createFileInBunnyCDN();
-                    }
+                    $this->createFileInBunnyCDN();
 
                     $this->recordFilePathAndHashInMemory(
                         $this->hash_key,
@@ -83,13 +85,7 @@ class BunnyCDN extends SitePublisher {
                     );
                 }
             } else {
-                if ( $this->fileExistsInBunnyCDN() ) {
-                    error_log( 'nocache File exist:' . $this->hash_key );
-                    $this->updateFileInBunnyCDN();
-                } else {
-                    error_log( 'nocache File exist:' . $this->hash_key );
-                    $this->createFileInBunnyCDN();
-                }
+                $this->createFileInBunnyCDN();
 
                 $this->recordFilePathAndHashInMemory(
                     $this->hash_key,
@@ -97,8 +93,6 @@ class BunnyCDN extends SitePublisher {
                 );
             }
         }
-
-        unset( $this->bunnycdn );
 
         $this->writeFilePathAndHashesToFile();
 
@@ -143,7 +137,8 @@ class BunnyCDN extends SitePublisher {
             $good_response_codes = array( '100', '200', '201', '302' );
 
             if ( ! in_array( $status_code, $good_response_codes ) ) {
-                $err = 'BAD RESPONSE DURING BUNNYCDN PURGE CACHE: ' . $status_code;
+                $err =
+                    'BAD RESPONSE DURING BUNNYCDN PURGE CACHE: ' . $status_code;
                 WsLog::l( $err );
                 throw new Exception( $err );
 
@@ -162,7 +157,7 @@ class BunnyCDN extends SitePublisher {
     public function test_bunnycdn() {
         try {
             $remote_path = $this->api_base . '/' .
-                options['bunnycdnStorageZoneName'] .
+                $this->storage_zone_name .
                 '/tmpFile';
 
             $ch = curl_init();
@@ -181,7 +176,7 @@ class BunnyCDN extends SitePublisher {
                 CURLOPT_HTTPHEADER,
                 array(
                     'AccessKey: ' .
-                        $this->storage_zone_access_key
+                        $this->storage_zone_access_key,
                 )
             );
 
@@ -200,10 +195,12 @@ class BunnyCDN extends SitePublisher {
 
             curl_close( $ch );
 
-            $good_response_codes = array( '100', '200', '201', '301', '302', '304' );
+            $good_response_codes =
+                array( '100', '200', '201', '301', '302', '304' );
 
             if ( ! in_array( $status_code, $good_response_codes ) ) {
-                $err = 'BAD RESPONSE DURING BUNNYCDN TEST DEPLOY: ' . $status_code;
+                $err =
+                    'BAD RESPONSE DURING BUNNYCDN TEST DEPLOY: ' . $status_code;
                 WsLog::l( $err );
                 throw new Exception( $err );
             }
@@ -217,37 +214,35 @@ class BunnyCDN extends SitePublisher {
         }
     }
 
-    public function fileExistsInBunnyCDN() {
-        $this->client = new Request();
-
-        return false;
-    }
-
     public function createFileInBunnyCDN() {
-        try {
-            $remote_path = $this->api_base . '/' .
-                $this->storage_zone_name .
-                '/' . $this->target_path;
+        error_log('creating file in bunny' . $this->local_file);
 
-            $headers = array(
-                'AccessKey: ' .
-                    $this->storage_zone_access_key,
-            );
+        $remote_path = $this->api_base . '/' .
+            $this->storage_zone_name .
+            '/' . $this->target_path;
 
-            $this->client->putWithFileStreamAndHeaders(
-                $remote_path,
-                $this->local_file,
-                $headers
-            );
+        $headers = array( 'AccessKey: ' .  $this->storage_zone_access_key, );
 
-            $this->checkForValidResponses(
-                $this->client->status_code,
-                array( '100', '200', '201', '301', '302', '304' )
-            );
-        } catch ( Exception $e ) {
-            $this->handleException( $e );
+        $this->client->putWithFileStreamAndHeaders(
+            $remote_path,
+            $this->local_file,
+            $headers
+        );
+
+        $success = $this->checkForValidResponses(
+            $this->client->status_code,
+            array( '100', '200', '201', '301', '302', '304' )
+        );
+
+        if ( ! $success ) {
+            $err = "Received {$this->client->status_code} response from API " .
+               "with body: {$this->client->body}";
+            WsLog::l( $err );
+
+            http_response_code( $this->client->status_code );
+            throw new Exception( $err );
         }
+
+        error_log('successfully created' . $remote_path);
     }
 }
-
-$bunny = new BunnyCDN();
