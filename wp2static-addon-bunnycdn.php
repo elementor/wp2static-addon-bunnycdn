@@ -36,7 +36,7 @@ if ( $ajax_action == 'test_bunnycdn' ) {
     $bunnycdn = new WP2Static\BunnyCDN();
 
     $bunnycdn->bootstrap();
-    $bunnycdn->prepareDeploy();
+    $bunnycdn->prepareDeploy( true );
 
     wp_die();
     return null;
