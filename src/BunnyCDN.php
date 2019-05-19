@@ -215,8 +215,6 @@ class BunnyCDN extends SitePublisher {
     }
 
     public function createFileInBunnyCDN() {
-        error_log('creating file in bunny' . $this->local_file);
-
         $remote_path = $this->api_base . '/' .
             $this->storage_zone_name .
             '/' . $this->target_path;
@@ -242,7 +240,5 @@ class BunnyCDN extends SitePublisher {
             http_response_code( $this->client->status_code );
             throw new Exception( $err );
         }
-
-        error_log('successfully created' . $remote_path);
     }
 }
