@@ -59,9 +59,26 @@ if ( $ajax_action == 'test_bunnycdn' ) {
 
 define( 'PLUGIN_NAME_VERSION', '0.1' );
 
+function runBackendDeployment( $method ) {
+    if ( $method !== 'bunnycdn' ) {
+        return;
+    }
+
+    $bunnyCDN = new WP2Static\BunnyCDN();
+    $bunnyCDN->bootstrap();
+    $bunnyCDN->prepareDeploy( true );
+    $bunnyCDN->bunnycdn_transfer_files();
+    $bunnyCDN->bunnycdn_purge_cache();
+}
+
+add_filter( 'wp2static_addon_trigger_deploy', 'runBackendDeployment' );
+
 function run_wp2static_addon_bunnycdn() {
     $plugin = new WP2Static\BunnyCDNAddon();
     $plugin->run();
 }
 
 run_wp2static_addon_bunnycdn();
+
+
+  
