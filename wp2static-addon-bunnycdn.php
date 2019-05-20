@@ -64,6 +64,8 @@ function runBackendDeployment( $method ) {
         return;
     }
 
+    WP2Static\WsLog::l('Starting BunnyCDN headless deployment');
+
     $bunnyCDN = new WP2Static\BunnyCDN();
     $bunnyCDN->bootstrap();
     $bunnyCDN->prepareDeploy( true );
