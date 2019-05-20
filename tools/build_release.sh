@@ -24,7 +24,7 @@ mkdir $TMP_DIR/wp2static-addon-bunnycdn
 # clear dev dependencies
 rm -Rf $EXEC_DIR/vendor/*
 # load prod deps
-composer install --no-dev
+composer install --no-dev --optimize-autoloader
 
 
 # cp all required sources to build dir
