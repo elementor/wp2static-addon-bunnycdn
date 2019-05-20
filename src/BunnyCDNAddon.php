@@ -30,6 +30,7 @@ class BunnyCDNAddon {
 
     public function add_deployment_option_to_ui( $deploy_options ) {
         $deploy_options['bunnycdn'] = array( 'BunnyCDN' );
+
         return $deploy_options;
     }
 
@@ -47,10 +48,12 @@ class BunnyCDNAddon {
             'bunnycdnPullZoneID',
             'bunnycdnRemotePath',
         );
+
         $keys = array_merge(
             $keys,
             $new_keys
         );
+
         return $keys;
     }
 
@@ -61,22 +64,12 @@ class BunnyCDNAddon {
             'bunnycdnPullZoneID',
             'bunnycdnRemotePath',
         );
+
         $keys = array_merge(
             $keys,
             $whitelist_keys
         );
-        return $keys;
-    }
 
-    public function add_post_and_db_keys( $keys ) {
-        $keys['bunnycdn'] = array(
-            'baseUrl-bunnycdn',
-            'bunnycdnStorageZoneName',
-            'bunnycdnStorageZoneAccessKey',
-            'bunnycdnPullZoneAccessKey',
-            'bunnycdnPullZoneID',
-            'bunnycdnRemotePath',
-        );
         return $keys;
     }
 
@@ -103,10 +96,5 @@ class BunnyCDNAddon {
             [ $this, 'whitelist_deployment_option_keys' ]
         );
 
-        add_filter(
-            'wp2static_add_post_and_db_keys',
-            [ $this, 'add_post_and_db_keys' ]
-        );
     }
-
 }
