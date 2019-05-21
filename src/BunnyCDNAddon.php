@@ -35,7 +35,7 @@ class BunnyCDNAddon {
     }
 
     public function load_deployment_option_template( $templates ) {
-        $templates[] = __DIR__ . '/../views/bunnycdn_settings_block.phtml';
+        $templates[] = __DIR__ . '/../views/bunnycdn_settings_block.php';
         return $templates;
     }
 
