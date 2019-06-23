@@ -222,7 +222,7 @@ class BunnyCDN extends SitePublisher {
             $this->storage_zone_name .
             '/' . $this->target_path;
 
-        $headers = array( 'AccessKey: ' .  $this->storage_zone_access_key, );
+        $headers = array( 'AccessKey: ' . $this->storage_zone_access_key );
 
         $this->client->putWithFileStreamAndHeaders(
             $remote_path,

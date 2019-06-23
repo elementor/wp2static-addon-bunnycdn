@@ -64,13 +64,13 @@ function runBackendDeployment( $method ) {
         return;
     }
 
-    WP2Static\WsLog::l('Starting BunnyCDN headless deployment');
+    WP2Static\WsLog::l( 'Starting BunnyCDN headless deployment' );
 
-    $bunnyCDN = new WP2Static\BunnyCDN();
-    $bunnyCDN->bootstrap();
-    $bunnyCDN->prepareDeploy( true );
-    $bunnyCDN->bunnycdn_transfer_files();
-    $bunnyCDN->bunnycdn_purge_cache();
+    $bunny_cdn = new WP2Static\BunnyCDN();
+    $bunny_cdn->bootstrap();
+    $bunny_cdn->prepareDeploy( true );
+    $bunny_cdn->bunnycdn_transfer_files();
+    $bunny_cdn->bunnycdn_purge_cache();
 }
 
 add_filter( 'wp2static_addon_trigger_deploy', 'runBackendDeployment' );
@@ -83,4 +83,4 @@ function run_wp2static_addon_bunnycdn() {
 run_wp2static_addon_bunnycdn();
 
 
-  
+
