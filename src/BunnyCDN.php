@@ -22,36 +22,19 @@ class BunnyCDN extends SitePublisher {
             $plugin->options->getOption( 'bunnycdnPullZoneID' );
         $this->cdn_remote_path =
             $plugin->options->getOption( 'bunnycdnRemotePath' );
-        $this->previous_hashes_path =
-            SiteInfo::getPath( 'uploads' ) .
-            'wp2static-working-files/' .
-            '/BUNNYCDN-PREVIOUS-HASHES.txt';
     }
 
     public function bunnycdn_transfer_files() {
-        $this->files_remaining = $this->getRemainingItemsCount();
-
-        if ( $this->files_remaining < 0 ) {
-            echo 'ERROR';
-            die();
-        }
-
-        if ( $this->batch_size > $this->files_remaining ) {
-            $this->batch_size = $this->files_remaining;
-        }
-
         $this->client = new Request();
 
         $lines = $this->getItemsToDeploy( $this->batch_size );
 
-        foreach ( $lines as $line ) {
-            list($this->local_file, $this->target_path) = $line;
-
-            $this->local_file = SiteInfo::getPath( 'uploads' ) .
+        foreach ( $lines as $local_file => $target_path ) {
+            $abs_local_file = SiteInfo::getPath( 'uploads' ) .
                 'wp2static-exported-site/' .
-                $this->local_file;
+                $local_file;
 
-            if ( ! is_file( $this->local_file ) ) {
+            if ( ! is_file( $abs_local_file ) ) {
                 $err = 'COULDN\'T FIND LOCAL FILE TO DEPLOY: ' .
                     $this->local_file;
                 WsLog::l( $err );
@@ -59,25 +42,18 @@ class BunnyCDN extends SitePublisher {
             }
 
             if ( isset( $this->cdn_remote_path ) ) {
-                $this->target_path =
+                $target_path =
                     $this->cdn_remote_path . '/' .
-                        $this->target_path;
+                        $target_path;
             }
 
+            if ( ! DeployCache::fileIsCached( $abs_local_file ) ) {
+                $this->createFileInBunnyCDN( $abs_local_file, $target_path );
 
-            // if file is in deploy cache, skip
-
-
-            // else deploy and store in cache
-
-            $this->local_file_contents = file_get_contents( $this->local_file );
-
-
-            if ( ! DeployCache::fileIsCached( $this->local_file ) {
-                $this->createFileInBunnyCDN();
-
-                DeployCache::addFile( $this->local_file );
+                DeployCache::addFile( $abs_local_file );
             }
+
+            DeployQueue::remove( $local_file );
         }
 
         $this->pauseBetweenAPICalls();
@@ -200,16 +176,19 @@ class BunnyCDN extends SitePublisher {
         }
     }
 
-    public function createFileInBunnyCDN() {
+    public function createFileInBunnyCDN(
+        string $local_file,
+        string $target_path
+    ) : void {
         $remote_path = $this->api_base . '/' .
             $this->storage_zone_name .
-            '/' . $this->target_path;
+            '/' . $target_path;
 
         $headers = array( 'AccessKey: ' . $this->storage_zone_access_key );
 
         $this->client->putWithFileStreamAndHeaders(
             $remote_path,
-            $this->local_file,
+            $local_file,
             $headers
         );
 
