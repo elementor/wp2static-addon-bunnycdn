@@ -44,10 +44,8 @@ class BunnyCDN extends SitePublisher {
 
         $lines = $this->getItemsToDeploy( $this->batch_size );
 
-        $this->openPreviousHashesFile();
-
         foreach ( $lines as $line ) {
-            list($this->local_file, $this->target_path) = explode( ',', $line );
+            list($this->local_file, $this->target_path) = $line;
 
             $this->local_file = SiteInfo::getPath( 'uploads' ) .
                 'wp2static-exported-site/' .
@@ -66,36 +64,21 @@ class BunnyCDN extends SitePublisher {
                         $this->target_path;
             }
 
+
+            // if file is in deploy cache, skip
+
+
+            // else deploy and store in cache
+
             $this->local_file_contents = file_get_contents( $this->local_file );
 
-            $this->hash_key =
-                $this->target_path;
-                // $this->target_path . basename( $this->local_file );
 
-            if ( isset( $this->file_paths_and_hashes[ $this->hash_key ] ) ) {
-                $prev = $this->file_paths_and_hashes[ $this->hash_key ];
-                $current = crc32( $this->local_file_contents );
-
-                // current file different than previous deployed one
-                if ( $prev != $current ) {
-                    $this->createFileInBunnyCDN();
-
-                    $this->recordFilePathAndHashInMemory(
-                        $this->hash_key,
-                        $this->local_file_contents
-                    );
-                }
-            } else {
+            if ( ! DeployCache::fileIsCached( $this->local_file ) {
                 $this->createFileInBunnyCDN();
 
-                $this->recordFilePathAndHashInMemory(
-                    $this->hash_key,
-                    $this->local_file_contents
-                );
+                DeployCache::addFile( $this->local_file );
             }
         }
-
-        $this->writeFilePathAndHashesToFile();
 
         $this->pauseBetweenAPICalls();
 

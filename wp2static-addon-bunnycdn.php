@@ -35,7 +35,6 @@ if ( $ajax_action == 'test_bunnycdn' ) {
 } elseif ( $ajax_action == 'bunnycdn_prepare_export' ) {
     $bunnycdn = new WP2Static\BunnyCDN();
 
-    $bunnycdn->bootstrap();
     $bunnycdn->prepareDeploy( true );
 
     wp_die();
@@ -43,7 +42,6 @@ if ( $ajax_action == 'test_bunnycdn' ) {
 } elseif ( $ajax_action == 'bunnycdn_transfer_files' ) {
     $bunnycdn = new WP2Static\BunnyCDN();
 
-    $bunnycdn->bootstrap();
     $bunnycdn->bunnycdn_transfer_files();
 
     wp_die();
@@ -67,7 +65,6 @@ function runBackendDeployment( $method ) {
     WP2Static\WsLog::l( 'Starting BunnyCDN headless deployment' );
 
     $bunny_cdn = new WP2Static\BunnyCDN();
-    $bunny_cdn->bootstrap();
     $bunny_cdn->prepareDeploy( true );
     $bunny_cdn->bunnycdn_transfer_files();
     $bunny_cdn->bunnycdn_purge_cache();
@@ -81,6 +78,4 @@ function run_wp2static_addon_bunnycdn() {
 }
 
 run_wp2static_addon_bunnycdn();
-
-
 
