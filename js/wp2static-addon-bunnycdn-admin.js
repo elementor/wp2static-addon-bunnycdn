@@ -2,7 +2,7 @@
 	'use strict';
 
 	$(function() {
-    WP2Static.deployOptions['bunnycdn'] = {
+    WP2Static.wp2staticGlobals.deployOptions['bunnycdn'] = {
         exportSteps: [
             'bunnycdn_prepare_export',
             'bunnycdn_transfer_files',
@@ -15,9 +15,9 @@
         }
     };
 
-    WP2Static.statusDescriptions['bunnycdn_prepare_export'] = 'Preparing files for BunnyCDN deployment';
-    WP2Static.statusDescriptions['bunnycdn_transfer_files'] = 'Deploying files via BunnyCDN';
-    WP2Static.statusDescriptions['bunnycdn_purge_cache'] = 'Purging BunnyCDN cache';
+    WP2Static.wp2staticGlobals.statusDescriptions['bunnycdn_prepare_export'] = 'Preparing files for BunnyCDN deployment';
+    WP2Static.wp2staticGlobals.statusDescriptions['bunnycdn_transfer_files'] = 'Deploying files via BunnyCDN';
+    WP2Static.wp2staticGlobals.statusDescriptions['bunnycdn_purge_cache'] = 'Purging BunnyCDN cache';
   }); // end DOM ready
 
 })( jQuery );
