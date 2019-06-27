@@ -39,6 +39,11 @@ class BunnyCDNAddon {
         return $templates;
     }
 
+    public function load_deployment_option_template_production( $templates ) {
+        $templates[] = __DIR__ . '/../views/bunnycdn_settings_block_production.php';
+        return $templates;
+    }
+
     public function add_deployment_option_keys( $keys ) {
         $new_keys = array(
             'baseUrl-bunnycdn',
@@ -84,6 +89,11 @@ class BunnyCDNAddon {
         add_filter(
             'wp2static_load_deploy_option_template',
             [ $this, 'load_deployment_option_template' ]
+        );
+
+        add_filter(
+            'wp2static_load_deploy_option_template_production',
+            [ $this, 'load_deployment_option_template_production' ]
         );
 
         add_filter(
