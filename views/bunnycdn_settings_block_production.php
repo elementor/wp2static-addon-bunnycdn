@@ -1,4 +1,7 @@
-<div id="bunnycdn_settings_block_production" style="display:none;">
+<div
+    id="bunnycdn_settings_block_production"
+    style="display:none;"
+    v-show="currentDeploymentMethodProduction == 'bunnycdn'">
 
 <section class="wp2static-content wp2static-flex">
   <div class="content" style="max-width:30%">
