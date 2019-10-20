@@ -46,7 +46,8 @@ class BunnyCDNAddon {
 
     public function add_deployment_option_keys( $keys ) {
         $new_keys = array(
-            'baseUrl-bunnycdn',
+            'baseUrlbunnycdn',
+            'baseUrlProductionbunnycdn',
             'bunnycdnStorageZoneName',
             'bunnycdnStorageZoneAccessKey',
             'bunnycdnPullZoneAccessKey',
@@ -64,7 +65,8 @@ class BunnyCDNAddon {
 
     public function whitelist_deployment_option_keys( $keys ) {
         $whitelist_keys = array(
-            'baseUrl-bunnycdn',
+            'baseUrlbunnycdn',
+            'baseUrlProductionbunnycdn',
             'bunnycdnStorageZoneName',
             'bunnycdnPullZoneID',
             'bunnycdnRemotePath',
