@@ -146,186 +146,123 @@ class BunnyCDN {
         return $storage_zone_files; 
     }
 
-    public function bunnycdn_transfer_files() {
-        $this->client = new Request();
-
-        $lines = $this->getItemsToDeploy( $this->batch_size );
-
-        foreach ( $lines as $local_file => $target_path ) {
-            $abs_local_file = SiteInfo::getPath( 'uploads' ) .
-                'wp2static-exported-site/' .
-                $local_file;
-
-            if ( ! is_file( $abs_local_file ) ) {
-                $err = 'COULDN\'T FIND LOCAL FILE TO DEPLOY: ' .
-                    $this->local_file;
-                WsLog::l( $err );
-                throw new Exception( $err );
-            }
-
-            if ( isset( $this->cdn_remote_path ) ) {
-                $target_path =
-                    $this->cdn_remote_path . '/' .
-                        $target_path;
-            }
-
-            if ( ! DeployCache::fileIsCached( $abs_local_file ) ) {
-                $this->createFileInBunnyCDN( $abs_local_file, $target_path );
-
-                DeployCache::addFile( $abs_local_file );
-            }
-
-            DeployQueue::remove( $local_file );
+    public function upload_files( string $processed_site_path ) : void {
+        if ( ! is_dir( $processed_site_path ) ) {
+            return;
         }
 
-        $this->pauseBetweenAPICalls();
+        // iterate each file in ProcessedSite
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(
+                $processed_site_path,
+                RecursiveDirectoryIterator::SKIP_DOTS
+            )
+        );
 
-        if ( $this->uploadsCompleted() ) {
-            $this->finalizeDeployment();
+        foreach ( $iterator as $filename => $file_object ) {
+            $base_name = basename( $filename );
+            if ( $base_name != '.' && $base_name != '..' ) {
+                $real_filepath = realpath( $filename );
+
+                // TODO: do filepaths differ when running from WP-CLI (non-chroot)?
+                $cache_key = str_replace( $processed_site_path, '', $filename );
+
+                if ( \WP2Static\DeployCache::fileisCached( $cache_key ) ) {
+                    continue;
+                }
+
+                if ( ! $real_filepath ) {
+                    $err = 'Trying to deploy unknown file to BunnyCDN: ' . $filename;
+                    \WP2Static\WsLog::l( $err );
+                    continue;
+                }
+
+                // Standardise all paths to use / (Windows support)
+                // TODO: apply WP method of get_safe_path or such
+                $filename = str_replace( '\\', '/', $filename );
+
+                if ( ! is_string( $filename ) ) {
+                    continue;
+                }
+
+                $remote_path = ltrim( $cache_key, '/' );
+
+                $res = $this->storageZoneclient->request(
+                    'PUT',
+                    "$this->storageZoneName/$remote_path",
+                    [
+                        'headers' => $this->storageZoneheaders,
+                        'body' => file_get_contents( $filename ),
+                    ],
+                );
+
+                $result = json_decode( (string) $res->getBody() );
+
+                if ( $result ) {
+                    error_log(print_r($result, true));
+                   
+                    // TODO: Look for 201 status from Bunny 
+                    // if ( $result['@metadata']['statusCode'] === 200 ) {
+                    //     \WP2Static\DeployCache::addFile( $cache_key );
+                    // }
+
+                    // TODO: purge cache on each of these or on hook? 
+                }
+            }
         }
     }
 
     public function bunnycdn_purge_cache() {
-        try {
-            $endpoint = 'https://bunnycdn.com/api/pullzone/' .
-                $this->pull_zone_id . '/purgeCache';
+        error_log('calling cache purge');
 
-            $ch = curl_init();
+        // try {
+        //     $endpoint = 'https://bunnycdn.com/api/pullzone/' .
+        //         $this->pull_zone_id . '/purgeCache';
 
-            curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, 'POST' );
-            curl_setopt( $ch, CURLOPT_URL, $endpoint );
-            curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-            curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 0 );
-            curl_setopt( $ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1 );
-            curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 0 );
-            curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 0 );
-            curl_setopt( $ch, CURLOPT_POST, 1 );
+        //     $ch = curl_init();
 
-            curl_setopt(
-                $ch,
-                CURLOPT_HTTPHEADER,
-                array(
-                    'Content-Type: application/json',
-                    'Content-Length: 0',
-                    'AccessKey: ' .
-                        $this->pull_zone_access_key,
-                )
-            );
+        //     curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, 'POST' );
+        //     curl_setopt( $ch, CURLOPT_URL, $endpoint );
+        //     curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+        //     curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 0 );
+        //     curl_setopt( $ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1 );
+        //     curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 0 );
+        //     curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 0 );
+        //     curl_setopt( $ch, CURLOPT_POST, 1 );
 
-            $output = curl_exec( $ch );
-            $status_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+        //     curl_setopt(
+        //         $ch,
+        //         CURLOPT_HTTPHEADER,
+        //         array(
+        //             'Content-Type: application/json',
+        //             'Content-Length: 0',
+        //             'AccessKey: ' .
+        //                 $this->pull_zone_access_key,
+        //         )
+        //     );
 
-            curl_close( $ch );
+        //     $output = curl_exec( $ch );
+        //     $status_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 
-            $good_response_codes = array( '100', '200', '201', '302' );
+        //     curl_close( $ch );
 
-            if ( ! in_array( $status_code, $good_response_codes ) ) {
-                $err =
-                    'BAD RESPONSE DURING BUNNYCDN PURGE CACHE: ' . $status_code;
-                WsLog::l( $err );
-                throw new Exception( $err );
+        //     $good_response_codes = array( '100', '200', '201', '302' );
 
-                echo 'FAIL';
-            }
+        //     if ( ! in_array( $status_code, $good_response_codes ) ) {
+        //         $err =
+        //             'BAD RESPONSE DURING BUNNYCDN PURGE CACHE: ' . $status_code;
+        //         WsLog::l( $err );
+        //         throw new Exception( $err );
 
-            if ( ! defined( 'WP_CLI' ) ) {
-                echo 'SUCCESS';
-            }
-        } catch ( Exception $e ) {
-            WsLog::l( 'BUNNYCDN EXPORT: error encountered' );
-            WsLog::l( $e );
-        }
-    }
+        //         echo 'FAIL';
+        //     }
 
-    public function test_bunnycdn() {
-        try {
-            $remote_path = $this->api_base . '/' .
-                $this->storage_zone_name .
-                '/tmpFile';
-
-            $ch = curl_init();
-
-            curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, 'PUT' );
-            curl_setopt( $ch, CURLOPT_URL, $remote_path );
-            curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-            curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 0 );
-            curl_setopt( $ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1 );
-            curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 0 );
-            curl_setopt( $ch, CURLOPT_HEADER, 0 );
-            curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1 );
-            curl_setopt( $ch, CURLOPT_POST, 1 );
-
-            curl_setopt(
-                $ch,
-                CURLOPT_HTTPHEADER,
-                array(
-                    'AccessKey: ' .
-                        $this->storage_zone_access_key,
-                )
-            );
-
-            $post_options = array(
-                'body' => 'Test WP2Static connectivity',
-            );
-
-            curl_setopt(
-                $ch,
-                CURLOPT_POSTFIELDS,
-                $post_options
-            );
-
-            $output = curl_exec( $ch );
-            $status_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-
-            curl_close( $ch );
-
-            $good_response_codes =
-                array( '100', '200', '201', '301', '302', '304' );
-
-            if ( ! in_array( $status_code, $good_response_codes ) ) {
-                $err =
-                    'BAD RESPONSE DURING BUNNYCDN TEST DEPLOY: ' . $status_code;
-                WsLog::l( $err );
-                throw new Exception( $err );
-            }
-        } catch ( Exception $e ) {
-            WsLog::l( 'BUNNYCDN EXPORT: error encountered' );
-            WsLog::l( $e );
-        }
-
-        if ( ! defined( 'WP_CLI' ) ) {
-            echo 'SUCCESS';
-        }
-    }
-
-    public function createFileInBunnyCDN(
-        string $local_file,
-        string $target_path
-    ) : void {
-        $remote_path = $this->api_base . '/' .
-            $this->storage_zone_name .
-            '/' . $target_path;
-
-        $headers = array( 'AccessKey: ' . $this->storage_zone_access_key );
-
-        $this->client->putWithFileStreamAndHeaders(
-            $remote_path,
-            $local_file,
-            $headers
-        );
-
-        $success = $this->checkForValidResponses(
-            $this->client->status_code,
-            array( '100', '200', '201', '301', '302', '304' )
-        );
-
-        if ( ! $success ) {
-            $err = "Received {$this->client->status_code} response from API " .
-               "with body: {$this->client->body}";
-            WsLog::l( $err );
-
-            http_response_code( $this->client->status_code );
-            throw new Exception( $err );
-        }
+        //     if ( ! defined( 'WP_CLI' ) ) {
+        //         echo 'SUCCESS';
+        //     }
+        // } catch ( Exception $e ) {
+        //     WsLog::l( 'BUNNYCDN EXPORT: error encountered' );
+        //     WsLog::l( $e );
+        // }
     }
 }
