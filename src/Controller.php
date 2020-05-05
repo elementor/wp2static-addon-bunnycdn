@@ -22,7 +22,7 @@ class Controller {
 
         add_action(
             'wp2static_post_deploy_trigger',
-            [ 'WP2StaticBunnyCDN\Deployer', 'bunnycdn_purge_cache' ],
+            [ 'WP2StaticBunnyCDN\BunnyCDN', 'bunnycdn_purge_cache' ],
             15,
             1
         );
@@ -123,7 +123,7 @@ class Controller {
     public function deploy( string $processed_site_path ) : void {
         \WP2Static\WsLog::l( 'BunnyCDN Addon deploying' );
 
-        $bunnycdn_deployer = new Deployer();
+        $bunnycdn_deployer = new BunnyCDN();
         $bunnycdn_deployer->upload_files( $processed_site_path );
     }
 

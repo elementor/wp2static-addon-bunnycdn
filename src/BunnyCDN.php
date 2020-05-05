@@ -15,6 +15,7 @@ class BunnyCDN {
 
     public function __construct() {
         $this->storageZoneAccessKey = '';
+        $this->pullZoneID = 0;
         $this->accountAPIKey = \WP2Static\CoreOptions::encrypt_decrypt(
             'decrypt',
             Controller::getValue( 'bunnycdnAccountAPIKey' )
@@ -46,6 +47,25 @@ class BunnyCDN {
         if ( $result ) {
             foreach ( $result as $storageZone ) {
                 if ( $storageZone->Name === $this->storageZoneName ) {
+                    // validate if pull zone is connected
+                    if ( ! $storageZone->PullZones ) {
+                        $err = 'No Pull Zone found attached to this Storage Zone, please check.';
+                        \WP2Static\WsLog::l( $err );
+                        error_log($err);
+                    }
+
+                    if ( count( $storageZone->PullZones ) > 1 ) {
+                        $notice = 'Multiple Pull Zones attached to Storage Zone, using first.';
+                        \WP2Static\WsLog::l( $notice );
+                        error_log($notice);
+                    }
+
+                    // use first connected PullZone ID
+                    $this->pullZoneID = $storageZone->PullZones[0]->Id;
+                    $notice = "Using Pull Zone ID $this->pullZoneID.";
+                    \WP2Static\WsLog::l( $notice );
+                    error_log( $notice );
+
                     $this->storageZoneAccessKey = $storageZone->Password;
                 }
             }
@@ -54,6 +74,7 @@ class BunnyCDN {
         if ( ! $this->storageZoneAccessKey ) {
             $err = 'Unable to find Storage Zone by name, please check your input.';
             \WP2Static\WsLog::l( $err );
+            error_log($err);
         }
 
         $this->storageZoneclient = new Client( [ 'base_uri' => 'https://storage.bunnycdn.com' ] );
