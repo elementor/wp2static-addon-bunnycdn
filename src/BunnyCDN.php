@@ -50,7 +50,37 @@ class BunnyCDN {
     }
 
     /**
+     * Delete all files and directories in Storage Zone
+     *
+     * Will delete directories without needing to drill down into them
+     *
+     */ 
+    public function delete_storage_zone_files() : bool {
+        $storage_zone_files = $this->list_storage_zone_files();
+
+        foreach ( $storage_zone_files as $file ) {
+            $res = $this->storageZoneclient->request(
+                'DELETE',
+                "$this->storageZoneName/$file",
+                [
+                    'headers' => $this->storageZoneheaders,
+                ],
+            );
+
+            $result = json_decode( (string) $res->getBody() );
+
+            if ( ! $result ) {
+                return false;
+            }
+        }
+        
+        return true; 
+    }
+
+    /**
      * List all files within Storage Zone
+     *
+     * TODO: write Iterator to get nested files
      *
      * @return string[] list of files
      */
@@ -68,7 +98,13 @@ class BunnyCDN {
         $result = json_decode( (string) $res->getBody() );
 
         if ( $result ) {
-            $storage_zone_files = array_map(function ($file) { return $file->ObjectName; }, $result);
+            foreach ( $result as $path ) {
+                if ( $path->IsDirectory ) {
+                    $storage_zone_files[] = $path->ObjectName . "/";
+                } else {
+                    $storage_zone_files[] = $path->ObjectName;
+                }
+            } 
         }
         
         return $storage_zone_files; 
