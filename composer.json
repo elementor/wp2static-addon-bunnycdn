@@ -13,37 +13,36 @@
     "type": "wordpress-plugin",
     "support": {
         "issues": "https://github.com/WP2Static/wp2static-addon-bunnycdn/issues",
-        "forum": "https://wp2static.com/community",
-        "docs": "https://wp2static.com/documentation",
+        "forum": "https://forum.wp2static.com",
+        "docs": "https://wp2static.com",
         "source": "https://github.com/WP2Static/wp2static-addon-bunnycdn"
     },
     "repositories": [
-        {
-            "type": "pear",
-            "url": "https://pear.php.net"
-        }
     ],
     "require": {
-        "php": ">=7.0"
+        "php": ">=7.2",
+        "guzzlehttp/guzzle": "^6.5"
     },
     "require-dev": {
-        "phpstan/phpstan-shim": "^0.11.5",
-        "giacocorsiglia/wordpress-stubs": "^5.1",
-        "squizlabs/php_codesniffer": "3.*",
-        "phpunit/phpunit": "^8",
+        "phpstan/phpstan": "*",
+        "thecodingmachine/phpstan-strict-rules": "*",
+        "szepeviktor/phpstan-wordpress": "*",
+        "squizlabs/php_codesniffer": "*",
+        "phpunit/phpunit": "*",
         "dealerdirect/phpcodesniffer-composer-installer": "*",
         "wp-coding-standards/wpcs": "*",
-        "jakub-onderka/php-parallel-lint": "*"
+        "jakub-onderka/php-parallel-lint": "*",
+        "10up/wp_mock": "^0.4.2"
     },
     "autoload": {
         "psr-4": {
-            "WP2Static\\": "src/"
+            "WP2StaticBunnyCDN\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
             "PHPStan\\WordPress\\": "tests/phpstan/",
-            "WP2Static\\": "src/"
+            "WP2StaticBunnyCDN\\": "src/"
         }
     },
     "config": {
@@ -56,11 +55,17 @@
         "classmap-authoritative": true
     },
     "scripts": {
-        "phpstan": "php -d memory_limit=-1 ./vendor/bin/phpstan analyse",
-        "phpcs": "vendor/bin/phpcs --standard=./tools/phpcs.xml --ignore=*/views/*,*/tests/*,*/vendor/*,wp2static.php,*/js/* ./",
-        "phpcbf": "vendor/bin/phpcbf --standard=./tools/phpcs.xml --ignore=*/views/*,*/tests/*,*/vendor/*,wp2static.php,*/js/* ./",
+        "phpstan": "vendor/bin/phpstan analyse",
+        "phpcs": "vendor/bin/phpcs --standard=./tools/phpcs.xml --ignore=*/tests/*,*/admin/*,**/coverage/*,*.js,*/vendor/*,*/views/*.php ./",
+        "phpcbf": "vendor/bin/phpcbf --standard=./tools/phpcs.xml --ignore=*/js/*,*/tests/*,*/admin/*,*/coverage/*,*.js,*/vendor/*,*/views/*.php ./",
         "phpunit": "vendor/bin/phpunit ./tests/unit/",
+        "coverage": "vendor/bin/phpunit tests/unit --coverage-html coverage --whitelist src/",
         "lint": "vendor/bin/parallel-lint --exclude vendor .",
+        "test": [
+            "@lint",
+            "@phpcs",
+            "@phpstan"
+        ],
         "build": "/bin/sh tools/build_release.sh"
     }
 }

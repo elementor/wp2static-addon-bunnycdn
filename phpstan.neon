@@ -1,37 +1,20 @@
-# See options in https://github.com/phpstan/phpstan/blob/master/conf/config.neon
-services:
-    -
-        class: PHPStan\WordPress\IsWpErrorFunctionTypeSpecifyingExtension
-        tags:
-            - phpstan.typeSpecifier.functionTypeSpecifyingExtension
-    -
-        class: PHPStan\WordPress\WpThemeMagicPropertiesClassReflectionExtension
-        tags:
-            - phpstan.broker.propertiesClassReflectionExtension
-    -
-        class: PHPStan\WordPress\RedirectCanonicalDynamicFunctionReturnTypeExtension
-        tags:
-            - phpstan.broker.dynamicFunctionReturnTypeExtension
-    -
-        class: PHPStan\WordPress\EscSqlDynamicFunctionReturnTypeExtension
-        tags:
-            - phpstan.broker.dynamicFunctionReturnTypeExtension
 includes:
-    # https://github.com/phpstan/phpstan/blob/master/conf/bleedingEdge.neon
-    - phar://phpstan.phar/conf/bleedingEdge.neon
+    - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+    - vendor/thecodingmachine/phpstan-strict-rules/phpstan-strict-rules.neon
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
 parameters:
     level: max
+    inferPrivatePropertyTypeFromConstructor: true
     paths:
         - %currentWorkingDirectory%/src/
-    #excludes_analyse:
-    #    - %currentWorkingDirectory%/
     autoload_files:
-        - %currentWorkingDirectory%/vendor/giacocorsiglia/wordpress-stubs/wordpress-stubs.php
         - %currentWorkingDirectory%/tests/phpstan/bootstrap.php
         - %currentWorkingDirectory%/tests/phpstan/wp-cli-stubs-2.2.0.php
-    #autoload_directories:
-    #    - %currentWorkingDirectory%/
     ignoreErrors:
-        # TODO Add proper PHPDoc blocks
-        - '#^Access to an undefined property #'
-        - '#^Class [a-zA-Z0-9\\_]+ not found and could not be autoloaded.#'
+        - '#[a-zA-Z0-9\\_]+superglobal[a-zA-Z0-9\\_]+#'
+        - '#Call to static method l\(\) on an unknown class WP2Static\\WsLog.#'
+        - '#Call to static method getUrl\(\) on an unknown class WP2Static\\SiteInfo.#'
+        - '#Call to static method getPath\(\) on an unknown class WP2Static\\SiteInfo.#'
+        - '#Call to static method fileisCached\(\) on an unknown class WP2Static\\DeployCache.#'
+        - '#Call to static method addFile\(\) on an unknown class WP2Static\\DeployCache.#'
+        - '#Call to static method encrypt_decrypt\(\) on an unknown class WP2Static\\CoreOptions.#'
