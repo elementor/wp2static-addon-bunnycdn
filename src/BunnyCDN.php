@@ -1,27 +1,77 @@
 <?php
 
-namespace WP2Static;
+namespace WP2StaticBunnyCDN;
 
-use Exception;
+use RecursiveIteratorIterator;
+use RecursiveDirectoryIterator;
+use GuzzleHttp\Client;
 
-class BunnyCDN extends SitePublisher {
+class BunnyCDN {
+
+    public $accountAPIKey;
+    public $storageZoneName;
+    public $storageZoneAccessKey;
+    public $pullZoneID;
 
     public function __construct() {
-        $plugin = Controller::getInstance();
+        $this->accountAPIKey = \WP2Static\CoreOptions::encrypt_decrypt(
+            'decrypt',
+            Controller::getValue( 'bunnycdnAccountAPIKey' )
+        );
+        $this->storageZoneName = Controller::getValue( 'bunnycdnStorageZoneName' );
+        $this->storageZoneAccessKey = \WP2Static\CoreOptions::encrypt_decrypt(
+            'decrypt',
+            Controller::getValue( 'bunnycdnStorageZoneAccessKey' )
+        );
 
-        $this->api_base = 'https://storage.bunnycdn.com';
-        $this->batch_size =
-            $plugin->options->getOption( 'deployBatchSize' );
-        $this->storage_zone_name =
-            $plugin->options->getOption( 'bunnycdnStorageZoneName' );
-        $this->storage_zone_access_key =
-            $plugin->options->getOption( 'bunnycdnStorageZoneAccessKey' );
-        $this->pull_zone_access_key =
-            $plugin->options->getOption( 'bunnycdnPullZoneAccessKey' );
-        $this->pull_zone_id =
-            $plugin->options->getOption( 'bunnycdnPullZoneID' );
-        $this->cdn_remote_path =
-            $plugin->options->getOption( 'bunnycdnRemotePath' );
+        $this->pullZoneID = Controller::getValue( 'bunnycdnPullZoneID' );
+
+        if (
+            ! $this->accountAPIKey ||
+            ! $this->storageZoneName ||
+            ! $this->storageZoneAccessKey ||
+            ! $this->pullZoneID
+        ) {
+            $err = 'Unable to connect to BunnyCDN API without ' .
+            'Account API Key, Storage Zone Name, Storage Zone Access Key & Pull Zone ID';
+            \WP2Static\WsLog::l( $err );
+        }
+
+        $this->storageZoneclient = new Client( [ 'base_uri' => 'https://storage.bunnycdn.com' ] );
+
+        $this->storageZoneheaders = [
+            'AccessKey' => $this->storageZoneAccessKey,
+            'Accept' => 'application/json',
+        ];
+
+        $this->pullZoneclient = new Client( [ 'base_uri' => 'https://bunnycdn.com/api' ] );
+
+        $this->pullZoneheaders = [ 'AccessKey' => 'Bearer ' . $this->storageZoneAccessKey ];
+    }
+
+    /**
+     * List all files within Storage Zone
+     *
+     * @return string[] list of files
+     */
+    public function list_storage_zone_files() : array{
+        $storage_zone_files = [];
+
+        $res = $this->storageZoneclient->request(
+            'GET',
+            "$this->storageZoneName/",
+            [
+                'headers' => $this->storageZoneheaders,
+            ],
+        );
+
+        $result = json_decode( (string) $res->getBody() );
+
+        if ( $result ) {
+            $storage_zone_files = array_map(function ($file) { return $file->ObjectName; }, $result);
+        }
+        
+        return $storage_zone_files; 
     }
 
     public function bunnycdn_transfer_files() {
