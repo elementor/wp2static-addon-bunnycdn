@@ -8,32 +8,51 @@ use GuzzleHttp\Client;
 
 class BunnyCDN {
 
-    public $accountAPIKey;
-    public $storageZoneName;
-    public $storageZoneAccessKey;
-    public $pullZoneID;
+    private $accountAPIKey;
+    private $storageZoneName;
+    private $storageZoneAccessKey;
+    private $pullZoneID;
 
     public function __construct() {
+        $this->storageZoneAccessKey = '';
         $this->accountAPIKey = \WP2Static\CoreOptions::encrypt_decrypt(
             'decrypt',
             Controller::getValue( 'bunnycdnAccountAPIKey' )
         );
         $this->storageZoneName = Controller::getValue( 'bunnycdnStorageZoneName' );
-        $this->storageZoneAccessKey = \WP2Static\CoreOptions::encrypt_decrypt(
-            'decrypt',
-            Controller::getValue( 'bunnycdnStorageZoneAccessKey' )
-        );
 
-        $this->pullZoneID = Controller::getValue( 'bunnycdnPullZoneID' );
-
-        if (
-            ! $this->accountAPIKey ||
-            ! $this->storageZoneName ||
-            ! $this->storageZoneAccessKey ||
-            ! $this->pullZoneID
-        ) {
+        if ( ! $this->accountAPIKey || ! $this->storageZoneName ) {
             $err = 'Unable to connect to BunnyCDN API without ' .
             'Account API Key, Storage Zone Name, Storage Zone Access Key & Pull Zone ID';
+            \WP2Static\WsLog::l( $err );
+        }
+
+        $this->accountClient = new Client( [ 'base_uri' => 'https://bunnycdn.com' ] );
+
+        $this->accountHeaders = [ 'AccessKey' =>  $this->accountAPIKey ];
+
+        // get list of Storage Zones to find ID
+        // get Storage Zone Access Key using Account API Key
+        $res = $this->accountClient->request(
+            'GET',
+            "api/storagezone",
+            [
+                'headers' => $this->accountHeaders,
+            ],
+        );
+
+        $result = json_decode( (string) $res->getBody() );
+
+        if ( $result ) {
+            foreach ( $result as $storageZone ) {
+                if ( $storageZone->Name === $this->storageZoneName ) {
+                    $this->storageZoneAccessKey = $storageZone->Password;
+                }
+            }
+        }
+
+        if ( ! $this->storageZoneAccessKey ) {
+            $err = 'Unable to find Storage Zone by name, please check your input.';
             \WP2Static\WsLog::l( $err );
         }
 
@@ -43,10 +62,6 @@ class BunnyCDN {
             'AccessKey' => $this->storageZoneAccessKey,
             'Accept' => 'application/json',
         ];
-
-        $this->pullZoneclient = new Client( [ 'base_uri' => 'https://bunnycdn.com/api' ] );
-
-        $this->pullZoneheaders = [ 'AccessKey' => 'Bearer ' . $this->storageZoneAccessKey ];
     }
 
     /**

@@ -43,11 +43,8 @@ class CLI {
                     return;
                 }
 
-                // decrypt apiToken
-                if (
-                    $option_name === 'bunnycdnAccountAPIKey' ||
-                    $option_name === 'bunnycdnStorageZoneAccessKey'
-                ) {
+                // decrypt encrypted values
+                if ( $option_name === 'bunnycdnAccountAPIKey' ) {
                     $option_value = \WP2Static\CoreOptions::encrypt_decrypt(
                         'decrypt',
                         Controller::getValue( $option_name )
@@ -72,10 +69,7 @@ class CLI {
                 }
 
                 // decrypt apiToken
-                if (
-                    $option_name === 'bunnycdnAccountAPIKey' ||
-                    $option_name === 'bunnycdnStorageZoneAccessKey'
-                ) {
+                if ( $option_name === 'bunnycdnAccountAPIKey' ) {
                     $option_value = \WP2Static\CoreOptions::encrypt_decrypt(
                         'encrypt',
                         $option_value
@@ -92,11 +86,6 @@ class CLI {
                 $options['bunnycdnAccountAPIKey']->value = \WP2Static\CoreOptions::encrypt_decrypt(
                     'decrypt',
                     $options['bunnycdnAccountAPIKey']->value
-                );
-
-                $options['bunnycdnStorageZoneAccessKey']->value = \WP2Static\CoreOptions::encrypt_decrypt(
-                    'decrypt',
-                    $options['bunnycdnStorageZoneAccessKey']->value
                 );
 
                 WP_CLI\Utils\format_items(
@@ -123,6 +112,9 @@ class CLI {
             }
 
             if ( $arg === 'count' ) {
+
+                // TODO: call info on storage zone and get the FilesStored key holding total vs iterating 
+
                 $client = new BunnyCDN();
 
                 $filenames = $client->list_storage_zone_files();

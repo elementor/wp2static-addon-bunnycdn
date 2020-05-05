@@ -85,26 +85,6 @@ class Controller {
         );
 
         $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            'bunnycdnStorageZoneAccessKey',
-            '',
-            'Storage Zone Access Key',
-            ''
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            'bunnycdnPullZoneID',
-            '',
-            'Pull Zone ID',
-            ''
-        );
-
-        $wpdb->query( $query );
     }
 
     /**
@@ -117,10 +97,11 @@ class Controller {
 
         $table_name = $wpdb->prefix . 'wp2static_addon_bunnycdn_options';
 
-        $query_string = "INSERT INTO $table_name (name, value) VALUES (%s, %s);";
-        $query = $wpdb->prepare( $query_string, $name, $value );
-
-        $wpdb->query( $query );
+        $wpdb->update(
+            $table_name,
+            [ 'value' => $value ],
+            [ 'name' => $name ]
+        );
     }
 
     public static function renderBunnyCDNPage() : void {
@@ -261,25 +242,6 @@ class Controller {
             $table_name,
             [ 'value' => sanitize_text_field( $_POST['bunnycdnStorageZoneName'] ) ],
             [ 'name' => 'bunnycdnStorageZoneName' ]
-        );
-
-        $storageZoneAccessKey =
-            $_POST['bunnycdnStorageZoneAccessKey'] ?
-            \WP2Static\CoreOptions::encrypt_decrypt(
-                'encrypt',
-                sanitize_text_field( $_POST['bunnycdnStorageZoneAccessKey'] )
-            ) : '';
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => $storageZoneAccessKey ],
-            [ 'name' => 'bunnycdnStorageZoneAccessKey' ]
-        );
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => sanitize_text_field( $_POST['bunnycdnPullZoneID'] ) ],
-            [ 'name' => 'bunnycdnPullZoneID' ]
         );
 
         wp_safe_redirect( admin_url( 'admin.php?page=wp2static-bunnycdn' ) );

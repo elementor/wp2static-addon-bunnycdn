@@ -45,40 +45,6 @@
                 />
             </td>
         </tr>
-
-        <tr>
-            <td style="width:50%;">
-                <label
-                    for="<?php echo $view['options']['bunnycdnStorageZoneAccessKey']->name; ?>"
-                ><?php echo $view['options']['bunnycdnStorageZoneAccessKey']->label; ?></label>
-            </td>
-            <td>
-                <input
-                    id="<?php echo $view['options']['bunnycdnStorageZoneAccessKey']->name; ?>"
-                    name="<?php echo $view['options']['bunnycdnStorageZoneAccessKey']->name; ?>"
-                    type="password"
-                    value="<?php echo $view['options']['bunnycdnStorageZoneAccessKey']->value !== '' ?
-                        \WP2Static\CoreOptions::encrypt_decrypt('decrypt', $view['options']['bunnycdnStorageZoneAccessKey']->value) :
-                        ''; ?>"
-                />
-            </td>
-        </tr>
-
-        <tr>
-            <td style="width:50%;">
-                <label
-                    for="<?php echo $view['options']['bunnycdnPullZoneID']->name; ?>"
-                ><?php echo $view['options']['bunnycdnPullZoneID']->label; ?></label>
-            </td>
-            <td>
-                <input
-                    id="<?php echo $view['options']['bunnycdnPullZoneID']->name; ?>"
-                    name="<?php echo $view['options']['bunnycdnPullZoneID']->name; ?>"
-                    type="text"
-                    value="<?php echo $view['options']['bunnycdnPullZoneID']->value !== '' ? $view['options']['bunnycdnPullZoneID']->value : ''; ?>"
-                />
-            </td>
-        </tr>
     </tbody>
 </table>
 
