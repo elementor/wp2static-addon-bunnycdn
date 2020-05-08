@@ -151,6 +151,15 @@ class Controller {
         if ( ! isset( $options['bunnycdnBucket'] ) ) {
             self::seedOptions();
         }
+
+        do_action(
+            'wp2static_register_addon',
+            'wp2static-addon-bunnycdn',
+            'deploy',
+            'BunnyCDN Deployment',
+            'https://wp2static.com/addons/bunnycdn/',
+            'Deploys to BunnyCDN with cache invalidation'
+        );
     }
 
     public static function deactivate_for_single_site() : void {
