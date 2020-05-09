@@ -1,7 +1,5 @@
 <h2>BunnyCDN Deployment Options</h2>
 
-<h3>BunnyCDN</h3>
-
 <form
     name="wp2static-bunnycdn-save-options"
     method="POST"

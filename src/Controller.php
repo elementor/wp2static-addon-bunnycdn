@@ -4,8 +4,6 @@ namespace WP2StaticBunnyCDN;
 
 class Controller {
     public function run() : void {
-        add_filter( 'wp2static_add_menu_items', [ 'WP2StaticBunnyCDN\Controller', 'addSubmenuPage' ] );
-
         add_action(
             'admin_post_wp2static_bunnycdn_save_options',
             [ $this, 'saveOptionsFromUI' ],
@@ -19,6 +17,15 @@ class Controller {
             15,
             1
         );
+
+        add_action(
+            'admin_menu',
+            [ $this, 'addOptionsPage' ],
+            15,
+            1
+        );
+
+        add_filter('parent_file', [ $this, 'setActiveParentMenu' ]);
 
         add_action(
             'wp2static_post_deploy_trigger',
@@ -154,7 +161,7 @@ class Controller {
 
         do_action(
             'wp2static_register_addon',
-            'wp2static-addon-bunnycdn',
+            'wp2static_addon_bunnycdn',
             'deploy',
             'BunnyCDN Deployment',
             'https://wp2static.com/addons/bunnycdn/',
@@ -279,6 +286,26 @@ class Controller {
         }
 
         return $option_value;
+    }
+
+    public function addOptionsPage() {
+         add_submenu_page(
+             null,
+             'BunnyCDN Deployment Options',
+             'BunnyCDN Deployment Options',
+             'manage_options',
+             'wp2static_addon_bunnycdn',
+             [ $this, 'renderBunnyCDNPage' ]
+         );
+    }
+
+    // ensure WP2Static menu is active for addon
+    public function setActiveParentMenu() {
+            global $plugin_page;
+
+            if ('wp2static_addon_bunnycdn' === $plugin_page) {
+                $plugin_page = 'wp2static';
+            }
     }
 }
 
