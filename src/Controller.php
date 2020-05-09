@@ -161,7 +161,7 @@ class Controller {
 
         do_action(
             'wp2static_register_addon',
-            'wp2static_addon_bunnycdn',
+            'wp2static-addon-bunnycdn',
             'deploy',
             'BunnyCDN Deployment',
             'https://wp2static.com/addons/bunnycdn/',
@@ -294,7 +294,7 @@ class Controller {
              'BunnyCDN Deployment Options',
              'BunnyCDN Deployment Options',
              'manage_options',
-             'wp2static_addon_bunnycdn',
+             'wp2static-addon-bunnycdn',
              [ $this, 'renderBunnyCDNPage' ]
          );
     }
@@ -303,7 +303,7 @@ class Controller {
     public function setActiveParentMenu() {
             global $plugin_page;
 
-            if ('wp2static_addon_bunnycdn' === $plugin_page) {
+            if ('wp2static-addon-bunnycdn' === $plugin_page) {
                 $plugin_page = 'wp2static';
             }
     }
