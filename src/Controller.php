@@ -308,7 +308,7 @@ class Controller {
             global $plugin_page;
 
             if ('wp2static-addon-bunnycdn' === $plugin_page) {
-                $plugin_page = 'wp2static';
+                $plugin_page = 'wp2static-options';
             }
     }
 }
