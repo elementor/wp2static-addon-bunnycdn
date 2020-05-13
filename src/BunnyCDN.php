@@ -212,7 +212,11 @@ class BunnyCDN {
         }
     }
 
-    public function bunnycdn_purge_cache() {
+    public static function bunnycdn_purge_cache( string $enabled_deployer ) : void {
+        if ( $enabled_deployer !== 'wp2static-addon-bunnycdn' ) {
+            return;
+        }
+
         error_log('calling cache purge');
 
         // try {

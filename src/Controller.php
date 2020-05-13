@@ -15,7 +15,7 @@ class Controller {
             'wp2static_deploy',
             [ $this, 'deploy' ],
             15,
-            1
+            2
         );
 
         add_action(
@@ -25,13 +25,20 @@ class Controller {
             1
         );
 
-        add_filter('parent_file', [ $this, 'setActiveParentMenu' ]);
-
         add_action(
             'wp2static_post_deploy_trigger',
             [ 'WP2StaticBunnyCDN\BunnyCDN', 'bunnycdn_purge_cache' ],
             15,
-            1
+            2
+        );
+
+        do_action(
+            'wp2static_register_addon',
+            'wp2static-addon-bunnycdn',
+            'deploy',
+            'BunnyCDN Deployment',
+            'https://wp2static.com/addons/bunnycdn/',
+            'Deploys to BunnyCDN with cache invalidation'
         );
 
         if ( defined( 'WP_CLI' ) ) {
@@ -112,6 +119,8 @@ class Controller {
     }
 
     public static function renderBunnyCDNPage() : void {
+        add_filter('parent_file', [ $this, 'setActiveParentMenu' ]);
+
         $view = [];
         $view['nonce_action'] = 'wp2static-bunnycdn-options';
         $view['uploads_path'] = \WP2Static\SiteInfo::getPath( 'uploads' );
@@ -127,7 +136,11 @@ class Controller {
     }
 
 
-    public function deploy( string $processed_site_path ) : void {
+    public function deploy( string $processed_site_path, string $enabled_deployer ) : void {
+        if ( $enabled_deployer !== 'wp2static-addon-bunnycdn' ) {
+            return;
+        }
+
         \WP2Static\WsLog::l( 'BunnyCDN Addon deploying' );
 
         $bunnycdn_deployer = new BunnyCDN();
@@ -158,15 +171,6 @@ class Controller {
         if ( ! isset( $options['bunnycdnBucket'] ) ) {
             self::seedOptions();
         }
-
-        do_action(
-            'wp2static_register_addon',
-            'wp2static-addon-bunnycdn',
-            'deploy',
-            'BunnyCDN Deployment',
-            'https://wp2static.com/addons/bunnycdn/',
-            'Deploys to BunnyCDN with cache invalidation'
-        );
     }
 
     public static function deactivate_for_single_site() : void {
@@ -288,7 +292,7 @@ class Controller {
         return $option_value;
     }
 
-    public function addOptionsPage() {
+    public function addOptionsPage() : void {
          add_submenu_page(
              null,
              'BunnyCDN Deployment Options',
