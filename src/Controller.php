@@ -305,11 +305,12 @@ class Controller {
 
     // ensure WP2Static menu is active for addon
     public function setActiveParentMenu() {
-            global $plugin_page;
+        global $plugin_page;
 
-            if ('wp2static-addon-bunnycdn' === $plugin_page) {
-                $plugin_page = 'wp2static-options';
-            }
+        if ('wp2static-addon-bunnycdn' === $plugin_page) {
+            // phpcs:ignore
+            $plugin_page = 'wp2static-options';
+        }
     }
 }
 

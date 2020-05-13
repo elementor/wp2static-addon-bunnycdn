@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 define( 'WP2STATIC_BUNNYCDN_PATH', plugin_dir_path( __FILE__ ) );
-define( 'WP2STATIC_BunnyCDN_VERSION', '1.0-alpha-006' );
+define( 'WP2STATIC_BUNNYCDN_VERSION', '1.0-alpha-006' );
 
 if ( file_exists( WP2STATIC_BUNNYCDN_PATH . 'vendor/autoload.php' ) ) {
     require_once WP2STATIC_BUNNYCDN_PATH . 'vendor/autoload.php';
